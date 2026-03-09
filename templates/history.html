@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>历史记录 - 海藻检测</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>上传历史记录</h1>
+        <p>保留 7 天内记录，可单独查看与下载结果图。</p>
+        <div class="header-actions">
+          <a href="/" class="header-btn">返回首页</a>
+          <a href="#history" class="header-btn secondary">跳转历史列表</a>
+        </div>
+      </header>
+
+      {% if history_batches %}
+      <section class="history" id="history">
+        <div class="history-title">
+          <div>
+            <h2>历史批次</h2>
+            <p class="batch">保留 7 天内记录</p>
+          </div>
+          {% if history_pages and history_pages > 1 %}
+          <div class="pagination">
+            {% if history_page > 1 %}
+            <a class="page-btn" href="?page={{ history_page - 1 }}#history">上一页</a>
+            {% else %}
+            <span class="page-btn disabled">上一页</span>
+            {% endif %}
+            <span class="page-info">第 {{ history_page }} / {{ history_pages }} 页</span>
+            {% if history_page < history_pages %}
+            <a class="page-btn" href="?page={{ history_page + 1 }}#history">下一页</a>
+            {% else %}
+            <span class="page-btn disabled">下一页</span>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% for batch in history_batches %}
+        <div class="history-batch">
+          <div class="history-header">
+            <strong>{{ batch.created_at }}</strong>
+            <span>批次：{{ batch.batch_id }}</span>
+          </div>
+          <div class="grid">
+            {% for item in batch.records %}
+            <div class="result-card">
+              <div class="image-pair">
+                <div class="image-box">
+                  <span class="image-label">原图</span>
+                  <img
+                    src="{{ item.upload_url }}"
+                    alt="{{ item.filename }} 原图"
+                    data-full="{{ item.upload_url }}"
+                    data-title="{{ item.filename }} 原图"
+                  />
+                </div>
+                <div class="image-box">
+                  <span class="image-label">结果图</span>
+                  <img
+                    src="{{ item.result_url }}"
+                    alt="{{ item.filename }} 结果图"
+                    data-full="{{ item.result_url }}"
+                    data-title="{{ item.filename }} 结果图"
+                  />
+                </div>
+              </div>
+              <div class="meta">
+                <strong>{{ item.filename }}</strong>
+                <span>检测到 {{ item.detections }} 个目标</span>
+                <span class="conf">平均置信度 {{ (item.avg_conf or 0) | round(2) }} · 最高 {{ (item.max_conf or 0) | round(2) }}</span>
+                {% if item.confidences %}
+                <div class="conf-list">
+                  <span>目标置信度：</span>
+                  {% for conf in item.confidences %}
+                  <span class="conf-chip">{{ loop.index }}: {{ conf | round(2) }}</span>
+                  {% endfor %}
+                </div>
+                {% endif %}
+                <a class="download" href="{{ item.result_url }}" download>下载结果图</a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </section>
+      {% else %}
+      <section class="card">
+        <h2>暂无历史记录</h2>
+        <p class="batch">请先返回首页上传图片生成记录。</p>
+      </section>
+      {% endif %}
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // 为所有图片容器初始化 Viewer.js
+        const imagePairs = document.querySelectorAll('.image-pair');
+        
+        imagePairs.forEach(function(container) {
+          new Viewer(container, {
+            inline: false,
+            navbar: true,
+            title: true,
+            toolbar: {
+              zoomIn: true,
+              zoomOut: true,
+              oneToOne: true,
+              reset: true,
+              prev: true,
+              play: false,
+              next: true,
+              rotateLeft: true,
+              rotateRight: true,
+              flipHorizontal: true,
+              flipVertical: true,
+            },
+            tooltip: true,
+            movable: true,
+            zoomable: true,
+            rotatable: true,
+            scalable: true,
+            transition: true,
+            fullscreen: true,
+            keyboard: true,
+            url: 'data-full',
+            ready: function() {
+              // 可在此添加自定义逻辑
+            },
+            viewed: function() {
+              // 图片显示完成后回调
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

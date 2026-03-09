@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>海藻检测</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="stylesheet" href="/static/css/viewer.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>海藻检测</h1>
+        <p>上传 1-9 张图片，系统会在原图上绘制检测框、中心点和最短路径。</p>
+        <div class="header-actions">
+          <a href="#results" class="header-btn">View Current Results</a>
+          <a href="/history" class="header-btn secondary">View History</a>
+          <a href="/sim" class="header-btn secondary">Open Simulation</a>
+        </div>
+      </header>
+
+      <section class="card">
+        <form method="POST" enctype="multipart/form-data">
+          <label class="upload">
+            <span>选择图片（jpg/png/bmp）</span>
+            <input type="file" name="images" accept="image/*" multiple required />
+          </label>
+          <button type="submit">开始检测</button>
+        </form>
+        {% if error %}
+        <div class="alert">{{ error }}</div>
+        {% endif %}
+      </section>
+
+      {% if results %}
+      <section class="results">
+        <h2>本次检测结果</h2>
+        <p class="batch">批次：{{ batch_id }}</p>
+        <div class="grid">
+          {% for item in results %}
+          <div class="result-card">
+            <div class="image-pair">
+              <div class="image-box">
+                <span class="image-label">原图</span>
+                <img
+                  src="{{ item.upload_url }}"
+                  alt="{{ item.filename }} 原图"
+                  data-full="{{ item.upload_url }}"
+                  data-title="{{ item.filename }} 原图"
+                />
+              </div>
+              <div class="image-box">
+                <span class="image-label">结果图</span>
+                <img
+                  src="{{ item.result_url }}"
+                  alt="{{ item.filename }} 结果图"
+                  data-full="{{ item.result_url }}"
+                  data-title="{{ item.filename }} 结果图"
+                />
+              </div>
+            </div>
+            <div class="meta">
+              <strong>{{ item.filename }}</strong>
+              <span>检测到 {{ item.detections }} 个目标</span>
+              <span class="conf">平均置信度 {{ (item.avg_conf or 0) | round(2) }} · 最高 {{ (item.max_conf or 0) | round(2) }}</span>
+              {% if item.confidences %}
+              <div class="conf-list">
+                <span>目标置信度：</span>
+                {% for conf in item.confidences %}
+                <span class="conf-chip">{{ loop.index }}: {{ conf | round(2) }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+              <a class="download" href="{{ item.result_url }}" download>下载结果图</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // 为所有图片容器初始化 Viewer.js
+        const imagePairs = document.querySelectorAll('.image-pair');
+        
+        imagePairs.forEach(function(container) {
+          new Viewer(container, {
+            inline: false,
+            navbar: true,
+            title: true,
+            toolbar: {
+              zoomIn: true,
+              zoomOut: true,
+              oneToOne: true,
+              reset: true,
+              prev: true,
+              play: false,
+              next: true,
+              rotateLeft: true,
+              rotateRight: true,
+              flipHorizontal: true,
+              flipVertical: true,
+            },
+            tooltip: true,
+            movable: true,
+            zoomable: true,
+            rotatable: true,
+            scalable: true,
+            transition: true,
+            fullscreen: true,
+            keyboard: true,
+            url: 'data-full',
+            ready: function() {
+              // 可在此添加自定义逻辑
+            },
+            viewed: function() {
+              // 图片显示完成后回调
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

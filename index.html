@@ -1,0 +1,1253 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>海域协同仿真面板</title>
+  <style>
+    :root {
+      --ink: #062235;
+      --muted: #3a677e;
+      --line: rgba(6, 34, 53, 0.14);
+      --card: rgba(255, 255, 255, 0.9);
+      --bg-a: #d8f3ff;
+      --bg-b: #f4fbff;
+      --btn: #0f5f8f;
+      --btn-hover: #0b4d74;
+      --radius: 16px;
+      --shadow: 0 12px 30px rgba(8, 56, 82, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      background: radial-gradient(circle at 15% 10%, var(--bg-a), var(--bg-b) 60%);
+    }
+
+    .wrap {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.5px;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-left: 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: minmax(0, 2.1fr) minmax(280px, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .row { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(4px);
+    }
+
+    .card-hd {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(240,249,255,0.85));
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-weight: 500;
+    }
+
+    .card-bd { padding: 12px; }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      display: block;
+      background: #b7e8ff;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      border-radius: 12px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--btn);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    button.primary:hover { background: var(--btn-hover); }
+
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    @media (max-width: 980px) {
+      .grid3 { grid-template-columns: 1fr; }
+    }
+
+    .field {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .field label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    input[type="range"] { width: 100%; }
+
+    input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 13px;
+      padding: 8px;
+    }
+
+    .kv { line-height: 1.6; font-size: 13px; }
+    .muted { color: var(--muted); }
+    .table-wrap {
+      max-height: 260px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.85);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th, td {
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(6, 34, 53, 0.08);
+      white-space: nowrap;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #eef8ff;
+      color: #12415e;
+      font-weight: 700;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.82);
+      padding: 8px;
+    }
+    .metric .k {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .metric .v {
+      margin-top: 2px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0a3f5e;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 16px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>海域协同仿真面板<span id="modeBadge" class="badge">CIN（锁任务）</span></h1>
+      </div>
+      <div class="controls">
+        <button id="btnRun" class="primary">暂停</button>
+        <button id="btnReset">重置</button>
+        <button id="btnCIN" class="primary">CIN</button>
+        <button id="btnP2P">P2P</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <div class="card-hd">
+          <div>海域场景（Canvas）</div>
+          <div class="small">
+            <span>信道负载: <b id="signalLoad">0</b>%</span>
+            <span id="conflictText">Lock 冲突：0（目标）</span>
+          </div>
+        </div>
+        <div class="card-bd">
+          <canvas id="cv" width="980" height="560"></canvas>
+
+          <div style="height:10px"></div>
+
+          <div class="grid3">
+            <div class="field">
+              <label><span>仿真速度</span><span class="pill">x <b id="simSpeedTxt">1.0</b></span></label>
+              <input id="simSpeed" type="range" min="0.3" max="3" step="0.1" value="1" />
+            </div>
+
+            <div class="field">
+              <label><span>自动生成任务点</span><span class="pill" id="autoSpawnTxt">开启</span></label>
+              <div class="controls">
+                <button id="btnAutoSpawn" class="primary">切换</button>
+                <button id="btnAddTask">+ 任务点</button>
+              </div>
+              <div style="height:8px"></div>
+              <label><span>生成间隔</span><span class="pill"><b id="spawnRateTxt">20</b> s/个</span></label>
+              <input id="spawnRate" type="range" min="15" max="30" step="1" value="20" />
+            </div>
+
+            <div class="field">
+              <label><span>场景尺寸（像素）</span><span class="pill">建议 980x560</span></label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <input id="w" type="number" min="640" max="1400" value="980" />
+                <input id="h" type="number" min="380" max="900" value="560" />
+              </div>
+              <div style="height:8px"></div>
+              <div class="controls">
+                <button id="btnApplySize">应用尺寸</button>
+                <button id="btnAddShip">+ 无人船</button>
+                <button id="btnAddDrone">+ 无人机</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-hd">
+            <div>选中信息</div>
+            <div class="small">拖动船/机，点击任务点</div>
+          </div>
+          <div class="card-bd">
+            <div id="selInfo" class="kv"><span class="muted">未选中对象</span></div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="card">
+          <div class="card-hd">
+            <div>说明</div>
+            <div class="small">调度与图形</div>
+          </div>
+          <div class="card-bd">
+            <ul>
+              <li>CIN 模式: 任务被某船锁定后，其他船不再抢同一目标。</li>
+              <li>P2P 模式: 船只可并发选择最近任务，可能产生冲突计数。</li>
+              <li>能源阈值: 无人机≤25%触发待充电；除藻船≥80%可供电，≤35%停止供电。</li>
+              <li>AI调控: 无人机低电量会按“高电量优先+近距离”匹配充电船，并可打破固定一一对应。</li>
+              <li>无人船用船体+甲板样式绘制，无人机用机身+旋翼样式绘制。</li>
+              <li>海域包含渐变海面、波纹、岛礁和泡沫，方便直观看位置关系。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="card">
+          <div class="card-hd">
+            <div>CIN关系表</div>
+            <div class="small">任务共享数据（实时）</div>
+          </div>
+          <div class="card-bd">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Id</th>
+                    <th>Longitude</th>
+                    <th>Latitude</th>
+                    <th>Level</th>
+                    <th>Data</th>
+                    <th>Lock</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="cinTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="card">
+          <div class="card-hd">
+            <div>能源系统总览</div>
+            <div class="small">AI调控关键指标</div>
+          </div>
+          <div class="card-bd">
+            <div class="metric-grid">
+              <div class="metric">
+                <div class="k">总储能</div>
+                <div class="v" id="mTotalStorage">0%</div>
+              </div>
+              <div class="metric">
+                <div class="k">总供电量</div>
+                <div class="v" id="mTotalSupply">0</div>
+              </div>
+              <div class="metric">
+                <div class="k">电能利用率</div>
+                <div class="v" id="mUtilRate">0%</div>
+              </div>
+              <div class="metric">
+                <div class="k">可供电船只</div>
+                <div class="v" id="mChargeReady">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const moveToward = (pos, target, step) => {
+    const d = dist(pos, target);
+    if (d <= step || d === 0) return { x: target.x, y: target.y };
+    const t = step / d;
+    return { x: lerp(pos.x, target.x, t), y: lerp(pos.y, target.y, t) };
+  };
+  const uid = (p) => `${p}-${Math.random().toString(16).slice(2, 7)}`;
+  const randIn = (a, b) => a + Math.random() * (b - a);
+  const TASK_MIN_SERVICE_SEC = 10;
+  const TASK_MAX_SERVICE_SEC = 20;
+  const randomServiceDurationSec = () => randIn(TASK_MIN_SERVICE_SEC, TASK_MAX_SERVICE_SEC);
+  const makeTask = (id, pos, level, data) => {
+    const duration = randomServiceDurationSec();
+    return {
+      id,
+      pos,
+      level,
+      data,
+      lock: null,
+      status: "open",
+      serviceDurationSec: duration,
+      serviceRemainingSec: duration
+    };
+  };
+
+  const weatherPool = ["sunny", "cloudy", "rain", "storm"];
+  const weatherToLabel = { sunny: "晴", cloudy: "多云", rain: "雨", storm: "风暴" };
+  const levelToLabel = { 1: "低", 2: "较低", 3: "中", 4: "高", 5: "极高" };
+  const pickWeather = () => weatherPool[Math.floor(randIn(0, weatherPool.length))];
+  const DRONE_CHARGE_RATE = 2.2;
+  const DRONE_LOW_BATTERY_THRESHOLD = 25;
+  const SHIP_CHARGE_READY_THRESHOLD = 80;
+  const SHIP_CHARGE_STOP_THRESHOLD = 35;
+
+  function getDockPoint(ship, droneId) {
+    const heading = ship.heading || 0;
+    const hash = Array.from(droneId).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    const slot = (hash % 3) - 1;
+    const sideOffset = slot * 8;
+    const backOffset = 18;
+    return {
+      x: ship.pos.x - Math.cos(heading) * backOffset - Math.sin(heading) * sideOffset,
+      y: ship.pos.y - Math.sin(heading) * backOffset + Math.cos(heading) * sideOffset
+    };
+  }
+
+  function pickChargeShip(drone, shipsList, dronesList) {
+    const occupied = new Set(dronesList.filter((x) => x.state === "charging").map((x) => x.chargeShipId).filter(Boolean));
+    const waiting = new Set(dronesList.filter((x) => x.state === "returning").map((x) => x.chargeShipId).filter(Boolean));
+
+    const candidates = shipsList.filter((s) => {
+      if (s.energy < SHIP_CHARGE_READY_THRESHOLD) return false;
+      if (occupied.has(s.id)) return false;
+      if (waiting.has(s.id) && drone.chargeShipId !== s.id) return false;
+      if (s.state === "enroute" || s.state === "servicing") return false;
+      return true;
+    });
+
+    const scored = candidates
+      .map((s) => {
+        const d = dist(drone.pos, s.pos);
+        const score = s.energy * 1.6 - d * 0.2;
+        return { s, score };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    if (scored[0]) return scored[0].s.id;
+    return drone.homeShipId;
+  }
+
+  function shipStateLabel(state) {
+    if (state === "servicing") return "作业中";
+    if (state === "charge_waiting") return "充电等待中";
+    if (state === "charging_drone") return "给无人机充电中";
+    if (state === "enroute") return "前往任务";
+    return "待机";
+  }
+
+  function droneStateLabel(state, battery) {
+    if (state === "charging") return "充电中";
+    if (state === "returning") return "低电量待充电";
+    if (state === "scouting") return "升空监视";
+    if (battery >= 95) return "充满升空";
+    return "待机";
+  }
+
+  let running = true;
+  let mode = "CIN";
+  let simSpeed = 1;
+  let autoSpawnTasks = true;
+  let taskSpawnIntervalSec = 20;
+  let worldW = 980;
+  let worldH = 560;
+
+  let ships = [
+    { id: "S-01", pos: { x: 220, y: 370 }, v: 55, energy: 92, state: "idle", targetTaskId: null, heading: 0 },
+    { id: "S-02", pos: { x: 720, y: 280 }, v: 52, energy: 88, state: "idle", targetTaskId: null, heading: 0 }
+  ];
+
+  let drones = [
+    { id: "D-01", pos: { x: 250, y: 330 }, v: 92, battery: 84, state: "scouting", homeShipId: "S-01", chargeShipId: null, phase: Math.random() * 9 },
+    { id: "D-02", pos: { x: 690, y: 240 }, v: 90, battery: 80, state: "scouting", homeShipId: "S-02", chargeShipId: null, phase: Math.random() * 9 }
+  ];
+
+  let tasks = [
+    makeTask("T-001", { x: 520, y: 170 }, 4, { weather: "cloudy", hydro: 62 }),
+    makeTask("T-002", { x: 430, y: 430 }, 3, { weather: "rain", hydro: 74 })
+  ];
+
+  let signalLoad = 0;
+  let p2pCollisions = 0;
+  let totalGeneratedEnergy = 0;
+  let totalTransferToDrones = 0;
+  let selected = null;
+  let dragging = null;
+
+  const cv = document.getElementById("cv");
+  const ctx = cv.getContext("2d");
+  const el = (id) => document.getElementById(id);
+
+  function setMode(newMode) {
+    mode = newMode;
+    el("modeBadge").textContent = mode === "CIN" ? "CIN（锁任务）" : "P2P（广播）";
+    el("btnCIN").classList.toggle("primary", mode === "CIN");
+    el("btnP2P").classList.toggle("primary", mode === "P2P");
+    updateUI();
+  }
+
+  function reset() {
+    running = true;
+    mode = "CIN";
+    simSpeed = 1;
+    autoSpawnTasks = true;
+    taskSpawnIntervalSec = 20;
+    p2pCollisions = 0;
+    signalLoad = 0;
+    totalGeneratedEnergy = 0;
+    totalTransferToDrones = 0;
+
+    ships = [
+      { id: "S-01", pos: { x: 220, y: 370 }, v: 55, energy: 92, state: "idle", targetTaskId: null, heading: 0 },
+      { id: "S-02", pos: { x: 720, y: 280 }, v: 52, energy: 88, state: "idle", targetTaskId: null, heading: 0 }
+    ];
+
+    drones = [
+      { id: "D-01", pos: { x: 250, y: 330 }, v: 92, battery: 84, state: "scouting", homeShipId: "S-01", chargeShipId: null, phase: Math.random() * 9 },
+      { id: "D-02", pos: { x: 690, y: 240 }, v: 90, battery: 80, state: "scouting", homeShipId: "S-02", chargeShipId: null, phase: Math.random() * 9 }
+    ];
+
+    tasks = [
+      makeTask("T-001", { x: 520, y: 170 }, 4, { weather: "cloudy", hydro: 62 }),
+      makeTask("T-002", { x: 430, y: 430 }, 3, { weather: "rain", hydro: 74 })
+    ];
+
+    selected = null;
+    dragging = null;
+
+    el("btnRun").textContent = "暂停";
+    el("simSpeed").value = "1";
+    el("simSpeedTxt").textContent = "1.0";
+    el("spawnRate").value = "20";
+    el("spawnRateTxt").textContent = "20";
+    el("autoSpawnTxt").textContent = "开启";
+
+    setMode("CIN");
+    updateUI();
+  }
+
+  function cinAssign() {
+    const idleShips = ships.filter((s) =>
+      s.state === "idle"
+      && s.energy > SHIP_CHARGE_STOP_THRESHOLD
+      && !drones.some((d) => (d.state === "charging" || d.state === "returning") && d.chargeShipId === s.id)
+    );
+    const visibleTasks = tasks.filter((t) => t.status === "open" && t.lock === null);
+    if (!idleShips.length || !visibleTasks.length) {
+      signalLoad = idleShips.length ? 14 : 8;
+      return;
+    }
+
+    const available = [...visibleTasks];
+    for (const ship of idleShips) {
+      if (!available.length) break;
+      const best = available
+        .map((t) => {
+          const d = dist(ship.pos, t.pos);
+          const weatherPenalty = t.data.weather === "storm" ? 160 : (t.data.weather === "rain" ? 55 : 0);
+          const levelBonus = t.level * 28;
+          return { t, score: d + weatherPenalty - levelBonus };
+        })
+        .sort((a, b) => a.score - b.score)[0]?.t;
+
+      if (!best) continue;
+      tasks = tasks.map((t) => t.id === best.id ? { ...t, lock: ship.id, status: "in_progress" } : t);
+      ships = ships.map((s) => s.id === ship.id ? { ...s, state: "enroute", targetTaskId: best.id } : s);
+      const idx = available.findIndex((v) => v.id === best.id);
+      if (idx >= 0) available.splice(idx, 1);
+    }
+
+    signalLoad = clamp(22 + idleShips.length * 7, 0, 100);
+  }
+
+  function p2pAssign() {
+    const idleShips = ships.filter((s) =>
+      s.state === "idle"
+      && s.energy > SHIP_CHARGE_STOP_THRESHOLD
+      && !drones.some((d) => (d.state === "charging" || d.state === "returning") && d.chargeShipId === s.id)
+    );
+    const openTasks = tasks.filter((t) => t.status === "open");
+    if (!idleShips.length || !openTasks.length) {
+      signalLoad = 58;
+      return;
+    }
+
+    let collisions = 0;
+    for (const ship of idleShips) {
+      const nearest = openTasks
+        .map((t) => ({ t, d: dist(ship.pos, t.pos) }))
+        .sort((a, b) => a.d - b.d)[0]?.t;
+      if (!nearest) continue;
+
+      const targetNow = tasks.find((t) => t.id === nearest.id);
+      if (targetNow && targetNow.lock && targetNow.lock !== ship.id) collisions += 1;
+
+      tasks = tasks.map((t) => t.id === nearest.id ? { ...t, lock: t.lock ?? ship.id, status: "in_progress" } : t);
+      ships = ships.map((s) => s.id === ship.id ? { ...s, state: "enroute", targetTaskId: nearest.id } : s);
+    }
+
+    if (collisions) p2pCollisions += collisions;
+    signalLoad = clamp(64 + idleShips.length * 11 + openTasks.length * 2, 0, 100);
+  }
+
+  function applySize() {
+    worldW = clamp(parseInt(el("w").value || "980", 10), 640, 1400);
+    worldH = clamp(parseInt(el("h").value || "560", 10), 380, 900);
+    el("w").value = String(worldW);
+    el("h").value = String(worldH);
+    cv.width = worldW;
+    cv.height = worldH;
+  }
+
+  function drawSea(nowSec) {
+    const g = ctx.createLinearGradient(0, 0, 0, worldH);
+    g.addColorStop(0, "#a9e3ff");
+    g.addColorStop(0.45, "#61bfe8");
+    g.addColorStop(1, "#2d92c4");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, worldW, worldH);
+
+    for (let i = 0; i < 10; i += 1) {
+      const y = ((i + 1) / 11) * worldH;
+      ctx.beginPath();
+      for (let x = 0; x <= worldW; x += 24) {
+        const wave = Math.sin((x * 0.018) + nowSec * 1.4 + i) * (4 + i * 0.35);
+        if (x === 0) ctx.moveTo(x, y + wave);
+        else ctx.lineTo(x, y + wave);
+      }
+      ctx.strokeStyle = `rgba(255,255,255,${0.08 + i * 0.008})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "rgba(240, 230, 180, 0.9)";
+    ctx.beginPath();
+    ctx.ellipse(120, 90, 120, 60, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(211, 193, 137, 0.95)";
+    ctx.beginPath();
+    ctx.ellipse(182, 110, 60, 26, 0.25, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    for (let i = 0; i < 18; i += 1) {
+      const x = (i * 83 + nowSec * 45) % (worldW + 40) - 20;
+      const y = 65 + Math.sin((i + nowSec) * 0.9) * 12;
+      ctx.beginPath();
+      ctx.arc(x, y, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawTask(task) {
+    const radius = 9 + task.level * 2.6;
+    const colorByWeather = {
+      sunny: "#f6b20f",
+      cloudy: "#576b7f",
+      rain: "#1e4f80",
+      storm: "#13233a"
+    };
+
+    ctx.beginPath();
+    ctx.arc(task.pos.x, task.pos.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = task.status === "done" ? "#9da8b2" : colorByWeather[task.data.weather] || "#1e4f80";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(task.pos.x, task.pos.y, radius + 5, 0, Math.PI * 2);
+    ctx.strokeStyle = task.lock ? "rgba(3, 38, 61, 0.85)" : "rgba(3, 38, 61, 0.4)";
+    ctx.lineWidth = task.lock ? 2.4 : 1.4;
+    ctx.stroke();
+
+    ctx.font = "12px 'Microsoft YaHei', sans-serif";
+    ctx.fillStyle = "rgba(6, 34, 53, 0.85)";
+    ctx.fillText(task.id, task.pos.x + radius + 6, task.pos.y - 4);
+
+    if (task.lock) {
+      ctx.fillStyle = "rgba(6, 34, 53, 0.7)";
+      ctx.fillText(`Lock:${task.lock}`, task.pos.x + radius + 6, task.pos.y + 12);
+    }
+
+    if (selected && selected.kind === "task" && selected.id === task.id) {
+      ctx.beginPath();
+      ctx.arc(task.pos.x, task.pos.y, radius + 10, 0, Math.PI * 2);
+      ctx.strokeStyle = "#032c45";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+  }
+
+  function drawShip(ship) {
+    ctx.save();
+    ctx.translate(ship.pos.x, ship.pos.y);
+    ctx.rotate(ship.heading || 0);
+
+    ctx.beginPath();
+    ctx.moveTo(16, 0);
+    ctx.lineTo(8, -9);
+    ctx.lineTo(-15, -9);
+    ctx.lineTo(-20, 0);
+    ctx.lineTo(-15, 9);
+    ctx.lineTo(8, 9);
+    ctx.closePath();
+    ctx.fillStyle = "#062b45";
+    ctx.fill();
+
+    ctx.fillStyle = "#f6f9fc";
+    ctx.fillRect(-8, -5, 13, 10);
+    ctx.fillStyle = "#8ac2e3";
+    ctx.fillRect(-6.5, -3.5, 10, 7);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-18, 0);
+    ctx.lineTo(12, 0);
+    ctx.stroke();
+
+    ctx.restore();
+
+    ctx.fillStyle = "rgba(4, 30, 50, 0.75)";
+    ctx.font = "12px 'Microsoft YaHei', sans-serif";
+    ctx.fillText(`${ship.id} ${shipStateLabel(ship.state)}`, ship.pos.x - 18, ship.pos.y - 16);
+
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.fillRect(ship.pos.x - 16, ship.pos.y + 14, 32, 4);
+    ctx.fillStyle = "#0e5d89";
+    ctx.fillRect(ship.pos.x - 16, ship.pos.y + 14, 32 * (ship.energy / 100), 4);
+
+    if (selected && selected.kind === "ship" && selected.id === ship.id) {
+      ctx.strokeStyle = "#032c45";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(ship.pos.x - 24, ship.pos.y - 16, 48, 32);
+    }
+
+    if (ship.targetTaskId) {
+      const t = tasks.find((x) => x.id === ship.targetTaskId);
+      if (t) {
+        ctx.setLineDash([6, 5]);
+        ctx.beginPath();
+        ctx.moveTo(ship.pos.x, ship.pos.y);
+        ctx.lineTo(t.pos.x, t.pos.y);
+        ctx.strokeStyle = "rgba(5, 42, 66, 0.35)";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+  }
+
+  function drawDrone(drone, nowSec) {
+    const rotorPhase = nowSec * 24 + drone.phase;
+    ctx.save();
+    ctx.translate(drone.pos.x, drone.pos.y);
+
+    ctx.fillStyle = "#12344f";
+    ctx.fillRect(-6, -3.5, 12, 7);
+
+    const armLen = 12;
+    ctx.strokeStyle = "#113049";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-armLen, -armLen);
+    ctx.lineTo(armLen, armLen);
+    ctx.moveTo(armLen, -armLen);
+    ctx.lineTo(-armLen, armLen);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(245, 251, 255, 0.8)";
+    ctx.lineWidth = 1.5;
+    for (const p of [[-armLen,-armLen],[armLen,-armLen],[-armLen,armLen],[armLen,armLen]]) {
+      ctx.beginPath();
+      const r = 4 + Math.sin(rotorPhase + p[0]) * 0.8;
+      ctx.arc(p[0], p[1], Math.abs(r), 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+
+    ctx.fillStyle = "rgba(4, 30, 50, 0.75)";
+    ctx.font = "12px 'Microsoft YaHei', sans-serif";
+    ctx.fillText(`${drone.id} ${droneStateLabel(drone.state, drone.battery)}`, drone.pos.x + 10, drone.pos.y - 12);
+
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.fillRect(drone.pos.x - 13, drone.pos.y + 14, 26, 3);
+    ctx.fillStyle = "#0e5d89";
+    ctx.fillRect(drone.pos.x - 13, drone.pos.y + 14, 26 * (drone.battery / 100), 3);
+
+    if (selected && selected.kind === "drone" && selected.id === drone.id) {
+      ctx.beginPath();
+      ctx.arc(drone.pos.x, drone.pos.y, 17, 0, Math.PI * 2);
+      ctx.strokeStyle = "#032c45";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    const linkShip = ships.find((s) => s.id === (drone.chargeShipId || drone.homeShipId));
+    if (linkShip) {
+      ctx.setLineDash([3, 4]);
+      ctx.beginPath();
+      ctx.moveTo(drone.pos.x, drone.pos.y);
+      ctx.lineTo(linkShip.pos.x, linkShip.pos.y);
+      ctx.strokeStyle = "rgba(6, 45, 69, 0.2)";
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  function draw(now) {
+    const sec = now * 0.001;
+    ctx.clearRect(0, 0, worldW, worldH);
+
+    drawSea(sec);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.16)";
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= worldW; x += 50) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, worldH);
+      ctx.stroke();
+    }
+    for (let y = 0; y <= worldH; y += 50) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(worldW, y);
+      ctx.stroke();
+    }
+
+    tasks.forEach(drawTask);
+    ships.forEach(drawShip);
+    drones.forEach((d) => drawDrone(d, sec));
+  }
+
+  function pickEntity(p) {
+    for (const s of ships) {
+      if (Math.abs(p.x - s.pos.x) <= 24 && Math.abs(p.y - s.pos.y) <= 16) return { kind: "ship", id: s.id };
+    }
+    for (const d of drones) {
+      if (dist(p, d.pos) <= 17) return { kind: "drone", id: d.id };
+    }
+    for (const t of tasks) {
+      const r = 9 + t.level * 2.6;
+      if (dist(p, t.pos) <= r + 8) return { kind: "task", id: t.id };
+    }
+    return null;
+  }
+
+  function canvasToWorld(e) {
+    const r = cv.getBoundingClientRect();
+    // Convert from CSS pixels to canvas pixels so picking works even when canvas is scaled.
+    const scaleX = cv.width / r.width;
+    const scaleY = cv.height / r.height;
+    return {
+      x: (e.clientX - r.left) * scaleX,
+      y: (e.clientY - r.top) * scaleY
+    };
+  }
+
+  function updateSelInfo() {
+    const box = el("selInfo");
+    if (!selected) {
+      box.innerHTML = '<span class="muted">未选中对象</span>';
+      return;
+    }
+
+    if (selected.kind === "ship") {
+      const s = ships.find((x) => x.id === selected.id);
+      if (!s) return;
+      const chargeBand = s.energy >= SHIP_CHARGE_READY_THRESHOLD ? "可充电" : (s.energy <= SHIP_CHARGE_STOP_THRESHOLD ? "不可充电" : "正常");
+      box.innerHTML = `<div><b>无人船 ${s.id}</b> <span class="pill">${shipStateLabel(s.state)}</span></div>
+        <div>状态: ${shipStateLabel(s.state)}</div>
+        <div>储能: <b>${Math.round(s.energy)}%</b>（${chargeBand}）</div>
+        <div>速度: ${s.v.toFixed(0)} px/s</div>
+        <div>目标任务: ${s.targetTaskId || "-"}</div>`;
+      return;
+    }
+
+    if (selected.kind === "drone") {
+      const d = drones.find((x) => x.id === selected.id);
+      if (!d) return;
+      const batteryBand = d.battery <= DRONE_LOW_BATTERY_THRESHOLD ? "低电量" : "正常";
+      box.innerHTML = `<div><b>无人机 ${d.id}</b> <span class="pill">${droneStateLabel(d.state, d.battery)}</span></div>
+        <div>状态: ${droneStateLabel(d.state, d.battery)}</div>
+        <div>电量: <b>${Math.round(d.battery)}%</b>（${batteryBand}）</div>
+        <div>速度: ${d.v.toFixed(0)} px/s</div>
+        <div>归属船只: ${d.homeShipId || "-"}</div>
+        <div>充电目标船: ${d.chargeShipId || "-"}</div>`;
+      return;
+    }
+
+    const t = tasks.find((x) => x.id === selected.id);
+    if (!t) return;
+    box.innerHTML = `<div><b>任务点 ${t.id}</b> <span class="pill">${t.status}</span></div>
+      <div>等级: <b>${t.level}</b> (${levelToLabel[t.level]})</div>
+      <div>天气: ${weatherToLabel[t.data.weather]}</div>
+      <div>水文: ${t.data.hydro}</div>
+      <div>Lock: <b>${t.lock || "无"}</b></div>`;
+  }
+
+  function renderCinTable() {
+    const body = el("cinTableBody");
+    if (!body) return;
+
+    const rows = tasks
+      .slice()
+      .sort((a, b) => {
+        if (a.status === b.status) return a.id < b.id ? -1 : 1;
+        if (a.status === "open") return -1;
+        if (b.status === "open") return 1;
+        if (a.status === "in_progress") return -1;
+        if (b.status === "in_progress") return 1;
+        return 0;
+      })
+      .slice(0, 30)
+      .map((t) => {
+        const level = `${t.level}(${levelToLabel[t.level]})`;
+        const data = `${weatherToLabel[t.data.weather]}/${t.data.hydro}`;
+        const lock = t.lock || "-";
+        return `<tr>
+          <td>${t.id}</td>
+          <td>${t.pos.x.toFixed(1)}</td>
+          <td>${t.pos.y.toFixed(1)}</td>
+          <td>${level}</td>
+          <td>${data}</td>
+          <td>${lock}</td>
+          <td>${t.status}</td>
+        </tr>`;
+      })
+      .join("");
+
+    body.innerHTML = rows || `<tr><td colspan="7" class="muted">暂无任务数据</td></tr>`;
+  }
+
+  function updateUI() {
+    el("btnRun").textContent = running ? "暂停" : "运行";
+    el("signalLoad").textContent = String(Math.round(signalLoad));
+    el("conflictText").textContent = mode === "P2P" ? `冲突计数: ${p2pCollisions}` : "Lock 冲突：0（目标）";
+    el("autoSpawnTxt").textContent = autoSpawnTasks ? "开启" : "关闭";
+    const totalStorage = ships.reduce((acc, s) => acc + s.energy, 0);
+    const avgStorage = ships.length ? totalStorage / ships.length : 0;
+    const utilRate = totalGeneratedEnergy > 0 ? (totalTransferToDrones / totalGeneratedEnergy) * 100 : 0;
+    const chargeReadyCount = ships.filter((s) => s.energy >= SHIP_CHARGE_READY_THRESHOLD).length;
+    el("mTotalStorage").textContent = `${avgStorage.toFixed(1)}%`;
+    el("mTotalSupply").textContent = totalTransferToDrones.toFixed(1);
+    el("mUtilRate").textContent = `${clamp(utilRate, 0, 180).toFixed(1)}%`;
+    el("mChargeReady").textContent = `${chargeReadyCount}/${ships.length}`;
+    updateSelInfo();
+    renderCinTable();
+  }
+
+  let lastT = performance.now();
+
+  function step(now) {
+    const dt = clamp((now - lastT) / 1000, 0, 0.06) * simSpeed;
+    lastT = now;
+
+    if (running) {
+      if (autoSpawnTasks) {
+        const spawnRate = 1 / taskSpawnIntervalSec;
+        const p = 1 - Math.exp(-spawnRate * dt);
+        if (Math.random() < p) {
+          tasks.unshift(
+            makeTask(
+              uid("T"),
+              { x: randIn(80, worldW - 80), y: randIn(80, worldH - 80) },
+              clamp(Math.round(randIn(1, 5)), 1, 5),
+              { weather: pickWeather(), hydro: Math.round(randIn(35, 92)) }
+            )
+          );
+          tasks = tasks.slice(0, 40);
+        }
+      }
+
+      if (mode === "CIN") cinAssign();
+      else p2pAssign();
+
+      const waitingShipIds = new Set(drones.filter((d) => d.state === "returning" && d.chargeShipId).map((d) => d.chargeShipId));
+
+      ships = ships.map((s) => {
+        let energy = s.energy;
+        let state = s.state;
+        let targetTaskId = s.targetTaskId;
+        let nextPos = s.pos;
+        let heading = s.heading || 0;
+
+        if (state === "enroute" && targetTaskId) {
+          const target = tasks.find((t) => t.id === targetTaskId);
+          if (!target) return { ...s, state: "idle", targetTaskId: null };
+
+          nextPos = moveToward(s.pos, target.pos, s.v * dt);
+          heading = Math.atan2(target.pos.y - s.pos.y, target.pos.x - s.pos.x);
+          energy = clamp(energy - dt * 1.0, 0, 100);
+          if (dist(nextPos, target.pos) < 2.5) state = "servicing";
+          return { ...s, pos: nextPos, state, energy, targetTaskId, heading };
+        }
+
+        if (state === "servicing" && targetTaskId) {
+          const currentTask = tasks.find((t) => t.id === targetTaskId);
+          if (!currentTask) return { ...s, state: "idle", targetTaskId: null };
+
+          // Algae recovery power generation while mining.
+          const prevEnergy = energy;
+          energy = clamp(energy + dt * 1.4, 0, 100);
+          totalGeneratedEnergy += Math.max(0, energy - prevEnergy);
+          const nextRemaining = Math.max(0, (currentTask.serviceRemainingSec ?? 12) - dt);
+          tasks = tasks.map((t) => t.id === targetTaskId ? { ...t, serviceRemainingSec: nextRemaining } : t);
+
+          if (nextRemaining <= 0) {
+            tasks = tasks.map((t) => t.id === targetTaskId ? { ...t, status: "done", lock: null } : t);
+            state = "idle";
+            targetTaskId = null;
+          }
+          return { ...s, state, energy, targetTaskId, heading };
+        }
+
+        const chargingDrone = drones.some((d) => d.state === "charging" && d.chargeShipId === s.id);
+        const waitingDrone = waitingShipIds.has(s.id);
+        const idleDrain = chargingDrone ? 1.1 : 0.18;
+        energy = clamp(energy - dt * idleDrain, 0, 100);
+        state = chargingDrone ? "charging_drone" : (waitingDrone ? "charge_waiting" : "idle");
+        return { ...s, energy, state, targetTaskId, heading };
+      });
+
+      drones = drones.map((d) => {
+        let battery = d.battery;
+        let state = d.state;
+        let pos = d.pos;
+        let chargeShipId = d.chargeShipId;
+
+        const drainRate = state === "scouting" ? 1.15 : (state === "charging" ? 0.18 : 0.72);
+        battery = clamp(battery - dt * drainRate, 0, 100);
+        if (battery <= DRONE_LOW_BATTERY_THRESHOLD && state !== "charging") {
+          state = "returning";
+          chargeShipId = pickChargeShip(d, ships, drones);
+        }
+
+        if (state === "scouting") {
+          const t = now * 0.001 + d.phase;
+          const target = {
+            x: clamp(d.pos.x + Math.cos(t * 1.1) * 20, 24, worldW - 24),
+            y: clamp(d.pos.y + Math.sin(t * 1.3) * 14, 24, worldH - 24)
+          };
+          pos = moveToward(d.pos, target, d.v * dt);
+
+          const near = tasks.find((task) => task.status === "open" && dist(task.pos, pos) < 74);
+          if (near && Math.random() < (1 - Math.exp(-0.24 * dt))) {
+            tasks = tasks.map((task) => {
+              if (task.id !== near.id) return task;
+              return {
+                ...task,
+                level: clamp(task.level + (Math.random() < 0.33 ? 1 : 0), 1, 5),
+                data: {
+                  weather: Math.random() < 0.1 ? "storm" : task.data.weather,
+                  hydro: clamp(task.data.hydro + Math.round(randIn(-3, 4)), 0, 100)
+                }
+              };
+            });
+          }
+
+          return { ...d, pos, battery, state, chargeShipId: null };
+        }
+
+        if (state === "returning") {
+          if (!chargeShipId) chargeShipId = pickChargeShip(d, ships, drones);
+          let chargeShip = ships.find((s) => s.id === chargeShipId);
+          if (chargeShip && (chargeShip.energy < SHIP_CHARGE_STOP_THRESHOLD || chargeShip.state === "enroute" || chargeShip.state === "servicing")) {
+            chargeShipId = pickChargeShip(d, ships, drones);
+            chargeShip = ships.find((s) => s.id === chargeShipId);
+          }
+          if (!chargeShip) return { ...d, battery, state: "idle", chargeShipId: null };
+
+          const dock = getDockPoint(chargeShip, d.id);
+          pos = moveToward(d.pos, dock, d.v * dt);
+          const shipCanDock = !chargeShip.targetTaskId
+            && (chargeShip.state === "idle" || chargeShip.state === "charge_waiting" || chargeShip.state === "charging_drone")
+            && chargeShip.energy >= SHIP_CHARGE_STOP_THRESHOLD;
+          if (shipCanDock && dist(pos, dock) < 5) {
+            state = "charging";
+            pos = dock;
+          }
+          return { ...d, pos, battery, state, chargeShipId };
+        }
+
+        if (state === "charging") {
+          const chargeShip = ships.find((s) => s.id === chargeShipId);
+          if (!chargeShip) return { ...d, battery, state: "idle", chargeShipId: null };
+
+          const dock = getDockPoint(chargeShip, d.id);
+          pos = dock;
+
+          const availableFromShip = Math.max(0, chargeShip.energy - SHIP_CHARGE_STOP_THRESHOLD);
+          const batteryNeed = Math.max(0, 100 - battery);
+          const maxDroneGainFromShip = availableFromShip * 5;
+          const urgencyBoost = battery <= 12 ? 1.55 : (battery <= DRONE_LOW_BATTERY_THRESHOLD ? 1.25 : 1.0);
+          const adaptiveRate = DRONE_CHARGE_RATE * urgencyBoost;
+          const transfer = Math.min(adaptiveRate * dt, maxDroneGainFromShip, batteryNeed);
+
+          if (transfer > 0) {
+            battery = clamp(battery + transfer, 0, 100);
+            const shipCost = transfer / 5;
+            totalTransferToDrones += transfer;
+            ships = ships.map((s) => s.id === chargeShip.id ? { ...s, energy: clamp(s.energy - shipCost, 0, 100) } : s);
+          }
+
+          if (battery >= 95) state = "scouting";
+          if (transfer <= 0 && battery < 95) {
+            state = "returning";
+            chargeShipId = pickChargeShip(d, ships, drones);
+          }
+          if (state === "scouting") chargeShipId = null;
+          return { ...d, pos, battery, state, chargeShipId };
+        }
+
+        battery = clamp(battery - dt * 0.2, 0, 100);
+        if (battery >= 60) {
+          state = "scouting";
+          chargeShipId = null;
+        }
+        return { ...d, battery, state, chargeShipId };
+      });
+    }
+
+    draw(now);
+    updateUI();
+    requestAnimationFrame(step);
+  }
+
+  cv.addEventListener("mousedown", (e) => {
+    const p = canvasToWorld(e);
+    selected = pickEntity(p);
+    if (selected && selected.kind === "ship") {
+      const s = ships.find((x) => x.id === selected.id);
+      if (s) dragging = { kind: "ship", id: s.id, dx: p.x - s.pos.x, dy: p.y - s.pos.y };
+    }
+    if (selected && selected.kind === "drone") {
+      const d = drones.find((x) => x.id === selected.id);
+      if (d) dragging = { kind: "drone", id: d.id, dx: p.x - d.pos.x, dy: p.y - d.pos.y };
+    }
+    updateSelInfo();
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    const p = canvasToWorld(e);
+    const next = { x: clamp(p.x - dragging.dx, 20, worldW - 20), y: clamp(p.y - dragging.dy, 20, worldH - 20) };
+    if (dragging.kind === "ship") ships = ships.map((s) => s.id === dragging.id ? { ...s, pos: next } : s);
+    if (dragging.kind === "drone") drones = drones.map((d) => d.id === dragging.id ? { ...d, pos: next } : d);
+  });
+
+  window.addEventListener("mouseup", () => { dragging = null; });
+
+  el("btnRun").onclick = () => { running = !running; updateUI(); };
+  el("btnReset").onclick = reset;
+  el("btnCIN").onclick = () => setMode("CIN");
+  el("btnP2P").onclick = () => setMode("P2P");
+
+  el("btnAutoSpawn").onclick = () => {
+    autoSpawnTasks = !autoSpawnTasks;
+    updateUI();
+  };
+
+  el("btnAddTask").onclick = () => {
+    tasks.unshift(
+      makeTask(
+        uid("T"),
+        { x: randIn(80, worldW - 80), y: randIn(80, worldH - 80) },
+        clamp(Math.round(randIn(1, 5)), 1, 5),
+        { weather: pickWeather(), hydro: Math.round(randIn(35, 92)) }
+      )
+    );
+    tasks = tasks.slice(0, 40);
+  };
+
+  el("btnAddShip").onclick = () => {
+    const id = `S-${String(ships.length + 1).padStart(2, "0")}`;
+    ships.push({
+      id,
+      pos: { x: randIn(120, worldW - 120), y: randIn(120, worldH - 120) },
+      v: Math.round(randIn(45, 60)),
+      energy: Math.round(randIn(72, 95)),
+      state: "idle",
+      targetTaskId: null,
+      heading: 0
+    });
+  };
+
+  el("btnAddDrone").onclick = () => {
+    const id = `D-${String(drones.length + 1).padStart(2, "0")}`;
+    drones.push({
+      id,
+      pos: { x: randIn(120, worldW - 120), y: randIn(120, worldH - 120) },
+      v: Math.round(randIn(88, 96)),
+      battery: Math.round(randIn(62, 95)),
+      state: "scouting",
+      homeShipId: ships[0] ? ships[0].id : null,
+      chargeShipId: null,
+      phase: Math.random() * 9
+    });
+  };
+
+
+  el("simSpeed").oninput = (e) => {
+    simSpeed = parseFloat(e.target.value);
+    el("simSpeedTxt").textContent = simSpeed.toFixed(1);
+  };
+
+  el("spawnRate").oninput = (e) => {
+    taskSpawnIntervalSec = parseFloat(e.target.value);
+    el("spawnRateTxt").textContent = taskSpawnIntervalSec.toFixed(0);
+  };
+
+  el("btnApplySize").onclick = applySize;
+
+  applySize();
+  setMode("CIN");
+  updateUI();
+  draw(performance.now());
+  requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>
+
+
