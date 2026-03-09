@@ -131,14 +131,46 @@
       margin-bottom: 12px;
     }
 
-    .upload-section input[type="file"] {
+    .upload-section .file-input-wrapper {
+      position: relative;
+      display: inline-block;
       margin: 10px 0;
-      padding: 8px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fff;
       width: 100%;
       max-width: 400px;
+    }
+
+    .upload-section input[type="file"] {
+      position: absolute;
+      left: -9999px;
+      opacity: 0;
+    }
+
+    .upload-section .file-input-label {
+      display: block;
+      padding: 10px 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .upload-section .file-input-label:hover {
+      background: rgba(15, 95, 143, 0.05);
+      border-color: var(--btn);
+    }
+
+    .upload-section .file-count {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 2px 8px;
+      background: rgba(15, 95, 143, 0.1);
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--btn);
     }
 
     .alert {
@@ -287,7 +319,13 @@
         <form method="POST" enctype="multipart/form-data">
           <div class="upload-section">
             <p style="margin:0 0 10px 0;color:var(--muted);">选择 1-9 张图片（支持 jpg/png/bmp）</p>
-            <input type="file" name="images" accept="image/*" multiple required />
+            <div class="file-input-wrapper">
+              <input type="file" name="images" id="imageInput" accept="image/*" multiple required />
+              <label for="imageInput" class="file-input-label">
+                📁 选择图片文件
+                <span class="file-count" id="fileCount" style="display:none;"></span>
+              </label>
+            </div>
             <div style="height:10px"></div>
             <button type="submit" class="primary">开始检测</button>
           </div>
@@ -354,6 +392,23 @@
   <script src="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // 文件选择计数
+      const fileInput = document.getElementById('imageInput');
+      const fileCount = document.getElementById('fileCount');
+      
+      if (fileInput && fileCount) {
+        fileInput.addEventListener('change', function() {
+          const count = this.files.length;
+          if (count > 0) {
+            fileCount.textContent = `已选 ${count} 个文件`;
+            fileCount.style.display = 'inline-block';
+          } else {
+            fileCount.style.display = 'none';
+          }
+        });
+      }
+
+      // 图片查看器
       const imagePairs = document.querySelectorAll('.image-pair');
       
       imagePairs.forEach(function(container) {

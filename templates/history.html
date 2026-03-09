@@ -1,106 +1,410 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>历史记录 - 海藻检测</title>
-    <link rel="stylesheet" href="/static/css/style.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.css" />
+    <style>
+      :root {
+        --ink: #062235;
+        --muted: #3a677e;
+        --line: rgba(6, 34, 53, 0.14);
+        --card: rgba(255, 255, 255, 0.9);
+        --bg-a: #d8f3ff;
+        --bg-b: #f4fbff;
+        --btn: #0f5f8f;
+        --btn-hover: #0b4d74;
+        --radius: 16px;
+        --shadow: 0 12px 30px rgba(8, 56, 82, 0.14);
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+        background: radial-gradient(circle at 15% 10%, var(--bg-a), var(--bg-b) 60%);
+        min-height: 100vh;
+      }
+
+      .wrap {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+
+      .top {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: 0.5px;
+      }
+
+      h2 {
+        margin: 0 0 12px 0;
+        font-size: 18px;
+        color: var(--ink);
+      }
+
+      .badge {
+        display: inline-block;
+        margin-left: 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        background: rgba(255, 255, 255, 0.85);
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        backdrop-filter: blur(4px);
+        margin-bottom: 12px;
+      }
+
+      .card-hd {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(240,249,255,0.85));
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .card-bd {
+        padding: 12px;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      button, .btn {
+        appearance: none;
+        border: 1px solid var(--line);
+        color: var(--ink);
+        border-radius: 12px;
+        background: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 8px 12px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      button.primary, .btn.primary {
+        background: var(--btn);
+        color: #fff;
+        border-color: transparent;
+      }
+
+      button.primary:hover, .btn.primary:hover {
+        background: var(--btn-hover);
+      }
+
+      .batch {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0;
+      }
+
+      .pagination {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .page-btn {
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .page-btn:hover:not(.disabled) {
+        background: rgba(15, 95, 143, 0.05);
+        border-color: var(--btn);
+      }
+
+      .page-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .page-info {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+        gap: 12px;
+      }
+
+      @media (max-width: 980px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .result-card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.85);
+      }
+
+      .image-pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+      }
+
+      .image-box {
+        position: relative;
+        background: #f0f8ff;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .image-box:first-child {
+        border-right: 1px solid var(--line);
+      }
+
+      .image-label {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        background: rgba(6, 34, 53, 0.8);
+        color: #fff;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        z-index: 1;
+      }
+
+      .image-box img {
+        display: block;
+        width: 100%;
+        height: auto;
+        cursor: pointer;
+      }
+
+      .meta {
+        padding: 10px;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .meta strong {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 4px;
+        color: var(--ink);
+      }
+
+      .meta span {
+        display: block;
+        color: var(--muted);
+      }
+
+      .conf {
+        margin-top: 4px;
+      }
+
+      .conf-list {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .conf-chip {
+        display: inline-block !important;
+        background: rgba(15, 95, 143, 0.1);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 2px 6px;
+        font-size: 11px;
+        color: var(--ink);
+      }
+
+      .download {
+        display: inline-block;
+        margin-top: 8px;
+        color: var(--btn);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 12px;
+      }
+
+      .download:hover {
+        color: var(--btn-hover);
+        text-decoration: underline;
+      }
+
+      .history-batch {
+        margin-bottom: 16px;
+      }
+
+      .history-header {
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .history-header strong {
+        font-size: 14px;
+        color: var(--ink);
+      }
+
+      .history-header span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--muted);
+      }
+
+      .empty-state h2 {
+        margin-bottom: 8px;
+      }
+    </style>
   </head>
   <body>
-    <div class="page">
-      <header>
-        <h1>上传历史记录</h1>
-        <p>保留 7 天内记录，可单独查看与下载结果图。</p>
-        <div class="header-actions">
-          <a href="/" class="header-btn">返回首页</a>
-          <a href="#history" class="header-btn secondary">跳转历史列表</a>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1>历史记录<span class="badge">保留7天</span></h1>
         </div>
-      </header>
+        <div class="controls">
+          <a href="/" class="btn">返回仿真</a>
+          <a href="/detect" class="btn primary">海藻检测</a>
+        </div>
+      </div>
 
       {% if history_batches %}
-      <section class="history" id="history">
-        <div class="history-title">
-          <div>
-            <h2>历史批次</h2>
-            <p class="batch">保留 7 天内记录</p>
-          </div>
+      <div class="card">
+        <div class="card-hd">
+          <div>历史批次</div>
           {% if history_pages and history_pages > 1 %}
           <div class="pagination">
             {% if history_page > 1 %}
-            <a class="page-btn" href="?page={{ history_page - 1 }}#history">上一页</a>
+            <a class="page-btn" href="?page={{ history_page - 1 }}">上一页</a>
             {% else %}
             <span class="page-btn disabled">上一页</span>
             {% endif %}
             <span class="page-info">第 {{ history_page }} / {{ history_pages }} 页</span>
             {% if history_page < history_pages %}
-            <a class="page-btn" href="?page={{ history_page + 1 }}#history">下一页</a>
+            <a class="page-btn" href="?page={{ history_page + 1 }}">下一页</a>
             {% else %}
             <span class="page-btn disabled">下一页</span>
             {% endif %}
           </div>
           {% endif %}
         </div>
-        {% for batch in history_batches %}
-        <div class="history-batch">
-          <div class="history-header">
-            <strong>{{ batch.created_at }}</strong>
-            <span>批次：{{ batch.batch_id }}</span>
-          </div>
-          <div class="grid">
-            {% for item in batch.records %}
-            <div class="result-card">
-              <div class="image-pair">
-                <div class="image-box">
-                  <span class="image-label">原图</span>
-                  <img
-                    src="{{ item.upload_url }}"
-                    alt="{{ item.filename }} 原图"
-                    data-full="{{ item.upload_url }}"
-                    data-title="{{ item.filename }} 原图"
-                  />
-                </div>
-                <div class="image-box">
-                  <span class="image-label">结果图</span>
-                  <img
-                    src="{{ item.result_url }}"
-                    alt="{{ item.filename }} 结果图"
-                    data-full="{{ item.result_url }}"
-                    data-title="{{ item.filename }} 结果图"
-                  />
-                </div>
-              </div>
-              <div class="meta">
-                <strong>{{ item.filename }}</strong>
-                <span>检测到 {{ item.detections }} 个目标</span>
-                <span class="conf">平均置信度 {{ (item.avg_conf or 0) | round(2) }} · 最高 {{ (item.max_conf or 0) | round(2) }}</span>
-                {% if item.confidences %}
-                <div class="conf-list">
-                  <span>目标置信度：</span>
-                  {% for conf in item.confidences %}
-                  <span class="conf-chip">{{ loop.index }}: {{ conf | round(2) }}</span>
-                  {% endfor %}
-                </div>
-                {% endif %}
-                <a class="download" href="{{ item.result_url }}" download>下载结果图</a>
-              </div>
+        <div class="card-bd">
+          {% for batch in history_batches %}
+          <div class="history-batch">
+            <div class="history-header">
+              <strong>{{ batch.created_at }}</strong>
+              <span>批次：{{ batch.batch_id }}</span>
             </div>
-            {% endfor %}
+            <div class="grid">
+              {% for item in batch.records %}
+              <div class="result-card">
+                <div class="image-pair">
+                  <div class="image-box">
+                    <span class="image-label">原图</span>
+                    <img
+                      src="{{ item.upload_url }}"
+                      alt="{{ item.filename }} 原图"
+                      data-full="{{ item.upload_url }}"
+                      data-title="{{ item.filename }} 原图"
+                    />
+                  </div>
+                  <div class="image-box">
+                    <span class="image-label">结果图</span>
+                    <img
+                      src="{{ item.result_url }}"
+                      alt="{{ item.filename }} 结果图"
+                      data-full="{{ item.result_url }}"
+                      data-title="{{ item.filename }} 结果图"
+                    />
+                  </div>
+                </div>
+                <div class="meta">
+                  <strong>{{ item.filename }}</strong>
+                  <span>检测到 <b style="color:var(--ink)">{{ item.detections }}</b> 个目标</span>
+                  <span class="conf">平均置信度 <b style="color:var(--ink)">{{ (item.avg_conf or 0) | round(2) }}</b> · 最高 <b style="color:var(--ink)">{{ (item.max_conf or 0) | round(2) }}</b></span>
+                  {% if item.confidences %}
+                  <div class="conf-list">
+                    <span style="display:inline;margin-right:4px;">目标置信度：</span>
+                    {% for conf in item.confidences %}
+                    <span class="conf-chip">{{ loop.index }}: {{ conf | round(2) }}</span>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                  <a class="download" href="{{ item.result_url }}" download>下载结果图</a>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <div class="card">
+        <div class="card-bd">
+          <div class="empty-state">
+            <h2>暂无历史记录</h2>
+            <p class="batch">请先返回检测页面上传图片生成记录。</p>
           </div>
         </div>
-        {% endfor %}
-      </section>
-      {% else %}
-      <section class="card">
-        <h2>暂无历史记录</h2>
-        <p class="batch">请先返回首页上传图片生成记录。</p>
-      </section>
+      </div>
       {% endif %}
     </div>
     <script src="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        // 为所有图片容器初始化 Viewer.js
         const imagePairs = document.querySelectorAll('.image-pair');
         
         imagePairs.forEach(function(container) {
@@ -129,13 +433,7 @@
             transition: true,
             fullscreen: true,
             keyboard: true,
-            url: 'data-full',
-            ready: function() {
-              // 可在此添加自定义逻辑
-            },
-            viewed: function() {
-              // 图片显示完成后回调
-            }
+            url: 'data-full'
           });
         });
       });
