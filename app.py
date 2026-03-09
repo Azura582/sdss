@@ -254,8 +254,16 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET"])
 def index():
+    sim_path = os.path.join(APP_ROOT, "index.html")
+    if not os.path.exists(sim_path):
+        return "sim page not found", 404
+    return send_file(sim_path)
+
+
+@app.route("/detect", methods=["GET", "POST"])
+def detect():
     ensure_dirs()
     history = cleanup_history(load_history())
     save_history(history)
@@ -352,10 +360,7 @@ def api_detect():
 
 @app.route("/sim", methods=["GET"])
 def sim_page():
-    sim_path = os.path.join(APP_ROOT, "index.html")
-    if not os.path.exists(sim_path):
-        return "sim page not found", 404
-    return send_file(sim_path)
+    return index()
 
 
 @app.route("/history", methods=["GET"])

@@ -1,41 +1,310 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>海藻检测</title>
-    <link rel="stylesheet" href="/static/css/style.css" />
-    <link rel="stylesheet" href="/static/css/viewer.css" />
-  </head>
-  <body>
-    <div class="page">
-      <header>
-        <h1>海藻检测</h1>
-        <p>上传 1-9 张图片，系统会在原图上绘制检测框、中心点和最短路径。</p>
-        <div class="header-actions">
-          <a href="#results" class="header-btn">View Current Results</a>
-          <a href="/history" class="header-btn secondary">View History</a>
-          <a href="/sim" class="header-btn secondary">Open Simulation</a>
-        </div>
-      </header>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>海藻检测系统</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.css" />
+  <style>
+    :root {
+      --ink: #062235;
+      --muted: #3a677e;
+      --line: rgba(6, 34, 53, 0.14);
+      --card: rgba(255, 255, 255, 0.9);
+      --bg-a: #d8f3ff;
+      --bg-b: #f4fbff;
+      --btn: #0f5f8f;
+      --btn-hover: #0b4d74;
+      --radius: 16px;
+      --shadow: 0 12px 30px rgba(8, 56, 82, 0.14);
+    }
 
-      <section class="card">
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+      background: radial-gradient(circle at 15% 10%, var(--bg-a), var(--bg-b) 60%);
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.5px;
+    }
+
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 18px;
+      color: var(--ink);
+    }
+
+    .badge {
+      display: inline-block;
+      margin-left: 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(4px);
+      margin-bottom: 12px;
+    }
+
+    .card-hd {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(240,249,255,0.85));
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .card-bd {
+      padding: 12px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button, .btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      border-radius: 12px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    button.primary, .btn.primary {
+      background: var(--btn);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    button.primary:hover, .btn.primary:hover {
+      background: var(--btn-hover);
+    }
+
+    .upload-section {
+      border: 2px dashed var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.6);
+      margin-bottom: 12px;
+    }
+
+    .upload-section input[type="file"] {
+      margin: 10px 0;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .alert {
+      background: rgba(255, 59, 48, 0.1);
+      border: 1px solid rgba(255, 59, 48, 0.3);
+      color: #c41e3a;
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+
+    .batch {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .result-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .image-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .image-box {
+      position: relative;
+      background: #f0f8ff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .image-box:first-child {
+      border-right: 1px solid var(--line);
+    }
+
+    .image-label {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(6, 34, 53, 0.8);
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      z-index: 1;
+    }
+
+    .image-box img {
+      display: block;
+      width: 100%;
+      height: auto;
+      cursor: pointer;
+    }
+
+    .meta {
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .meta strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: var(--ink);
+    }
+
+    .meta span {
+      display: block;
+      color: var(--muted);
+    }
+
+    .conf {
+      margin-top: 4px;
+    }
+
+    .conf-list {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .conf-chip {
+      display: inline-block !important;
+      background: rgba(15, 95, 143, 0.1);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 11px;
+      color: var(--ink);
+    }
+
+    .download {
+      display: inline-block;
+      margin-top: 8px;
+      color: var(--btn);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .download:hover {
+      color: var(--btn-hover);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>海藻检测系统<span class="badge">YOLOv8</span></h1>
+      </div>
+      <div class="controls">
+        <a href="/" class="btn">返回仿真</a>
+        <a href="/history" class="btn">历史记录</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">
+        <div>上传图片检测</div>
+      </div>
+      <div class="card-bd">
         <form method="POST" enctype="multipart/form-data">
-          <label class="upload">
-            <span>选择图片（jpg/png/bmp）</span>
+          <div class="upload-section">
+            <p style="margin:0 0 10px 0;color:var(--muted);">选择 1-9 张图片（支持 jpg/png/bmp）</p>
             <input type="file" name="images" accept="image/*" multiple required />
-          </label>
-          <button type="submit">开始检测</button>
+            <div style="height:10px"></div>
+            <button type="submit" class="primary">开始检测</button>
+          </div>
         </form>
         {% if error %}
         <div class="alert">{{ error }}</div>
         {% endif %}
-      </section>
+      </div>
+    </div>
 
-      {% if results %}
-      <section class="results">
-        <h2>本次检测结果</h2>
-        <p class="batch">批次：{{ batch_id }}</p>
+    {% if results %}
+    <div class="card">
+      <div class="card-hd">
+        <div>检测结果</div>
+        <div style="font-size:11px;color:var(--muted);font-weight:500;">批次：{{ batch_id }}</div>
+      </div>
+      <div class="card-bd">
         <div class="grid">
           {% for item in results %}
           <div class="result-card">
@@ -61,11 +330,11 @@
             </div>
             <div class="meta">
               <strong>{{ item.filename }}</strong>
-              <span>检测到 {{ item.detections }} 个目标</span>
-              <span class="conf">平均置信度 {{ (item.avg_conf or 0) | round(2) }} · 最高 {{ (item.max_conf or 0) | round(2) }}</span>
+              <span>检测到 <b style="color:var(--ink)">{{ item.detections }}</b> 个目标</span>
+              <span class="conf">平均置信度 <b style="color:var(--ink)">{{ (item.avg_conf or 0) | round(2) }}</b> · 最高 <b style="color:var(--ink)">{{ (item.max_conf or 0) | round(2) }}</b></span>
               {% if item.confidences %}
               <div class="conf-list">
-                <span>目标置信度：</span>
+                <span style="display:inline;margin-right:4px;">目标置信度：</span>
                 {% for conf in item.confidences %}
                 <span class="conf-chip">{{ loop.index }}: {{ conf | round(2) }}</span>
                 {% endfor %}
@@ -76,52 +345,47 @@
           </div>
           {% endfor %}
         </div>
-      </section>
-      {% endif %}
-
+      </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.js"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // 为所有图片容器初始化 Viewer.js
-        const imagePairs = document.querySelectorAll('.image-pair');
-        
-        imagePairs.forEach(function(container) {
-          new Viewer(container, {
-            inline: false,
-            navbar: true,
-            title: true,
-            toolbar: {
-              zoomIn: true,
-              zoomOut: true,
-              oneToOne: true,
-              reset: true,
-              prev: true,
-              play: false,
-              next: true,
-              rotateLeft: true,
-              rotateRight: true,
-              flipHorizontal: true,
-              flipVertical: true,
-            },
-            tooltip: true,
-            movable: true,
-            zoomable: true,
-            rotatable: true,
-            scalable: true,
-            transition: true,
-            fullscreen: true,
-            keyboard: true,
-            url: 'data-full',
-            ready: function() {
-              // 可在此添加自定义逻辑
-            },
-            viewed: function() {
-              // 图片显示完成后回调
-            }
-          });
+    {% endif %}
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const imagePairs = document.querySelectorAll('.image-pair');
+      
+      imagePairs.forEach(function(container) {
+        new Viewer(container, {
+          inline: false,
+          navbar: true,
+          title: true,
+          toolbar: {
+            zoomIn: true,
+            zoomOut: true,
+            oneToOne: true,
+            reset: true,
+            prev: true,
+            play: false,
+            next: true,
+            rotateLeft: true,
+            rotateRight: true,
+            flipHorizontal: true,
+            flipVertical: true,
+          },
+          tooltip: true,
+          movable: true,
+          zoomable: true,
+          rotatable: true,
+          scalable: true,
+          transition: true,
+          fullscreen: true,
+          keyboard: true,
+          url: 'data-full'
         });
       });
-    </script>
-  </body>
+    });
+  </script>
+</body>
 </html>
