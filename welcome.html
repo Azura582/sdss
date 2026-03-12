@@ -222,7 +222,7 @@
     <div class="btn-group">
 
       <a href="/sim" class="nav-card">
-        <div class="icon"></div>
+        
         <div class="nav-title">协同仿真面板</div>
         <div class="nav-sub">
           无人船 × 无人机<br>
@@ -232,7 +232,7 @@
       </a>
 
       <a href="/detect" class="nav-card alt">
-        <div class="icon"></div>
+        
         <div class="nav-title">水藻智能检测</div>
         <div class="nav-sub">
           YOLOv8 深度识别<br>
@@ -262,40 +262,99 @@
     window.addEventListener("resize", resize);
     resize();
 
+    // 每条波浪的独立参数
+    const WAVES = [
+      { amp: 38, freq: 0.008, speed: 0.55, yRatio: 0.55, color: "rgba(14,110,168,0.18)",  lw: 2.5 },
+      { amp: 28, freq: 0.011, speed: 0.80, yRatio: 0.62, color: "rgba(30,140,200,0.15)",  lw: 2.0 },
+      { amp: 48, freq: 0.006, speed: 0.40, yRatio: 0.70, color: "rgba(10, 90,145,0.20)",  lw: 3.0 },
+      { amp: 22, freq: 0.014, speed: 1.10, yRatio: 0.74, color: "rgba(50,170,220,0.12)",  lw: 1.5 },
+      { amp: 55, freq: 0.005, speed: 0.30, yRatio: 0.82, color: "rgba(8,  72,130,0.22)",  lw: 3.5 },
+      { amp: 18, freq: 0.018, speed: 1.40, yRatio: 0.87, color: "rgba(70,190,235,0.10)",  lw: 1.5 },
+      { amp: 32, freq: 0.009, speed: 0.65, yRatio: 0.93, color: "rgba(20,120,175,0.16)",  lw: 2.0 },
+    ];
+
+    // 泡沫粒子池
+    const BUBBLES = Array.from({ length: 28 }, (_, i) => ({
+      seed: i * 137.5,
+      speed: 22 + Math.random() * 30,
+      yBase: 0.35 + Math.random() * 0.45,
+      yAmp:  0.04 + Math.random() * 0.10,
+      r:     1.4  + Math.random() * 2.2,
+      phase: Math.random() * Math.PI * 2,
+    }));
+
+    function drawWaveFill(wave, t) {
+      const baseY = H * wave.yRatio;
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      for (let x = 0; x <= W; x += 6) {
+        const y = baseY + Math.sin(x * wave.freq + t * wave.speed) * wave.amp
+                        + Math.sin(x * wave.freq * 1.7 + t * wave.speed * 0.6) * wave.amp * 0.35;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W, H);
+      ctx.closePath();
+      // 渐变填充
+      const grd = ctx.createLinearGradient(0, baseY - wave.amp, 0, H);
+      grd.addColorStop(0, wave.color);
+      grd.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grd;
+      ctx.fill();
+    }
+
+    function drawWaveLine(wave, t, offset) {
+      const baseY = H * wave.yRatio + offset;
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 6) {
+        const y = baseY + Math.sin(x * wave.freq + t * wave.speed + 0.8) * wave.amp * 0.6
+                        + Math.sin(x * wave.freq * 2.1 + t * wave.speed * 0.8) * wave.amp * 0.2;
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = wave.color.replace(/[\d.]+\)$/, "0.55)");
+      ctx.lineWidth = wave.lw;
+      ctx.stroke();
+    }
+
     function draw(now) {
       const t = now * 0.001;
       ctx.clearRect(0, 0, W, H);
 
-      // 渐变底色
-      const g = ctx.createLinearGradient(0, 0, 0, H);
-      g.addColorStop(0,   "rgba(169,227,255,0.22)");
-      g.addColorStop(0.5, "rgba(97,191,232,0.10)");
-      g.addColorStop(1,   "rgba(45,146,196,0.06)");
-      ctx.fillStyle = g;
+      // 整体海面渐变底色
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0,    "rgba(210,242,255,0.30)");
+      bg.addColorStop(0.40, "rgba(120,205,240,0.18)");
+      bg.addColorStop(0.75, "rgba(55,155,210,0.14)");
+      bg.addColorStop(1,    "rgba(20,100,165,0.10)");
+      ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
 
-      // 8 层波纹线
-      for (let i = 0; i < 8; i++) {
-        const y = H * 0.28 + (i / 7) * H * 0.68;
-        ctx.beginPath();
-        for (let x = 0; x <= W; x += 18) {
-          const wy = Math.sin(x * 0.013 + t * 1.15 + i * 0.65) * (5 + i * 0.55);
-          x === 0 ? ctx.moveTo(x, y + wy) : ctx.lineTo(x, y + wy);
-        }
-        ctx.strokeStyle = `rgba(255,255,255,${0.06 + i * 0.007})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
+      // 先画波浪填充层（从底到顶，深色先画）
+      for (let i = WAVES.length - 1; i >= 0; i--) {
+        drawWaveFill(WAVES[i], t);
       }
 
-      // 漂浮泡沫
-      ctx.fillStyle = "rgba(255,255,255,0.7)";
-      for (let i = 0; i < 20; i++) {
-        const x = (i * 103 + t * 36) % (W + 40) - 20;
-        const y = H * 0.32 + Math.sin((i * 1.3 + t) * 0.8) * (H * 0.26);
+      // 再画波浪描线（高光边缘）
+      for (const w of WAVES) {
+        drawWaveLine(w, t, -w.amp * 0.5);
+      }
+
+      // 泡沫粒子
+      for (const b of BUBBLES) {
+        const x = (b.seed + t * b.speed) % (W + 40) - 20;
+        const y = H * b.yBase + Math.sin(t * 0.9 + b.phase) * H * b.yAmp;
         ctx.beginPath();
-        ctx.arc(x, y, 2.2, 0, Math.PI * 2);
+        ctx.arc(x, y, b.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
         ctx.fill();
       }
+
+      // 顶部光晕（模拟阳光反射）
+      const glare = ctx.createRadialGradient(W * 0.72, H * 0.18, 0, W * 0.72, H * 0.18, W * 0.38);
+      glare.addColorStop(0,   "rgba(255,255,255,0.12)");
+      glare.addColorStop(0.5, "rgba(180,230,255,0.05)");
+      glare.addColorStop(1,   "rgba(0,0,0,0)");
+      ctx.fillStyle = glare;
+      ctx.fillRect(0, 0, W, H);
 
       requestAnimationFrame(draw);
     }
