@@ -256,10 +256,10 @@ app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 
 @app.route("/", methods=["GET"])
 def index():
-    sim_path = os.path.join(APP_ROOT, "index.html")
-    if not os.path.exists(sim_path):
-        return "sim page not found", 404
-    return send_file(sim_path)
+    welcome_path = os.path.join(APP_ROOT, "welcome.html")
+    if not os.path.exists(welcome_path):
+        return "welcome page not found", 404
+    return send_file(welcome_path)
 
 
 @app.route("/detect", methods=["GET", "POST"])
@@ -360,7 +360,10 @@ def api_detect():
 
 @app.route("/sim", methods=["GET"])
 def sim_page():
-    return index()
+    sim_path = os.path.join(APP_ROOT, "index.html")
+    if not os.path.exists(sim_path):
+        return "sim page not found", 404
+    return send_file(sim_path)
 
 
 @app.route("/history", methods=["GET"])
